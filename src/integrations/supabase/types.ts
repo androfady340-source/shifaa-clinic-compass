@@ -14,16 +14,254 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          booking_date: string
+          created_at: string
+          doctor_id: string
+          id: string
+          instapay_ref: string
+          notes: string
+          patient_name: string
+          patient_phone: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          start_time: string
+          status: Database["public"]["Enums"]["booking_status"]
+        }
+        Insert: {
+          booking_date: string
+          created_at?: string
+          doctor_id: string
+          id?: string
+          instapay_ref?: string
+          notes?: string
+          patient_name: string
+          patient_phone: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          start_time: string
+          status?: Database["public"]["Enums"]["booking_status"]
+        }
+        Update: {
+          booking_date?: string
+          created_at?: string
+          doctor_id?: string
+          id?: string
+          instapay_ref?: string
+          notes?: string
+          patient_name?: string
+          patient_phone?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          start_time?: string
+          status?: Database["public"]["Enums"]["booking_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doctor_availability: {
+        Row: {
+          doctor_id: string
+          end_time: string
+          id: string
+          start_time: string
+          weekday: number
+        }
+        Insert: {
+          doctor_id: string
+          end_time: string
+          id?: string
+          start_time: string
+          weekday: number
+        }
+        Update: {
+          doctor_id?: string
+          end_time?: string
+          id?: string
+          start_time?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_availability_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doctor_days_off: {
+        Row: {
+          doctor_id: string
+          id: string
+          off_date: string
+        }
+        Insert: {
+          doctor_id: string
+          id?: string
+          off_date: string
+        }
+        Update: {
+          doctor_id?: string
+          id?: string
+          off_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_days_off_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doctors: {
+        Row: {
+          accepts_clinic: boolean
+          accepts_instapay: boolean
+          bio: string
+          created_at: string
+          fee: number
+          full_name: string
+          id: string
+          phone: string
+          slot_minutes: number
+          specialty_id: string | null
+          status: Database["public"]["Enums"]["doctor_status"]
+          title: string
+        }
+        Insert: {
+          accepts_clinic?: boolean
+          accepts_instapay?: boolean
+          bio?: string
+          created_at?: string
+          fee?: number
+          full_name: string
+          id: string
+          phone?: string
+          slot_minutes?: number
+          specialty_id?: string | null
+          status?: Database["public"]["Enums"]["doctor_status"]
+          title?: string
+        }
+        Update: {
+          accepts_clinic?: boolean
+          accepts_instapay?: boolean
+          bio?: string
+          created_at?: string
+          fee?: number
+          full_name?: string
+          id?: string
+          phone?: string
+          slot_minutes?: number
+          specialty_id?: string | null
+          status?: Database["public"]["Enums"]["doctor_status"]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctors_specialty_id_fkey"
+            columns: ["specialty_id"]
+            isOneToOne: false
+            referencedRelation: "specialties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      specialties: {
+        Row: {
+          created_at: string
+          icon: string
+          id: string
+          name: string
+          sort: number
+        }
+        Insert: {
+          created_at?: string
+          icon?: string
+          id?: string
+          name: string
+          sort?: number
+        }
+        Update: {
+          created_at?: string
+          icon?: string
+          id?: string
+          name?: string
+          sort?: number
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_booking: {
+        Args: {
+          _date: string
+          _doctor: string
+          _instapay_ref: string
+          _name: string
+          _notes: string
+          _payment: Database["public"]["Enums"]["payment_method"]
+          _phone: string
+          _time: string
+        }
+        Returns: string
+      }
+      get_booking_status: {
+        Args: { _id: string; _phone: string }
+        Returns: {
+          booking_date: string
+          doctor_name: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          start_time: string
+          status: Database["public"]["Enums"]["booking_status"]
+        }[]
+      }
+      get_taken_slots: {
+        Args: { _date: string; _doctor: string }
+        Returns: string[]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "doctor"
+      booking_status: "pending" | "confirmed" | "cancelled" | "completed"
+      doctor_status: "pending" | "approved" | "rejected"
+      payment_method: "instapay" | "clinic"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +388,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "doctor"],
+      booking_status: ["pending", "confirmed", "cancelled", "completed"],
+      doctor_status: ["pending", "approved", "rejected"],
+      payment_method: ["instapay", "clinic"],
+    },
   },
 } as const
