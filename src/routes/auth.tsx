@@ -52,7 +52,7 @@ function AuthPage() {
         setSent("بعتنالك لينك تغيير كلمة السر على الإيميل.");
       } else {
         const p = signupSchema.safeParse(f);
-        if (!p.success) return toast.error(p.error.issues[0].message);
+        if (!p.success) return toast.error(p.error.issues[0]?.message ?? "راجع البيانات");
         const { error } = await supabase.auth.signUp({
           email: p.data.email,
           password: p.data.password,

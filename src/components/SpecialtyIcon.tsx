@@ -11,7 +11,7 @@ const MAP: Record<string, LucideIcon> = {
 
 export const ICON_KEYS = Object.keys(MAP);
 
-export function SpecialtyIcon({ name, className }: { name?: string | null; className?: string }) {
+export function SpecialtyIcon({ name, className }: { name?: string | null | undefined; className?: string }) {
   const Icon = MAP[name ?? ""] ?? Stethoscope;
   return <Icon className={className} />;
 }
