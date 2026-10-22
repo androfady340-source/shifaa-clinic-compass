@@ -88,7 +88,7 @@ function BookPage() {
   const submit = async () => {
     if (!date || !time) return toast.error("اختار اليوم والساعة");
     const parsed = formSchema.safeParse(form);
-    if (!parsed.success) return toast.error(parsed.error.issues[0].message);
+    if (!parsed.success) return toast.error(parsed.error.issues[0]?.message ?? "راجع البيانات");
     if (payment === "instapay" && form.ref.trim().length < 3) return toast.error("اكتب اسم أو رقم المحوِّل");
     setBusy(true);
     const { data: id, error } = await supabase.rpc("create_booking", {

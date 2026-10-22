@@ -2,7 +2,7 @@ export type Range = { start_time: string; end_time: string };
 
 export const toMin = (t: string) => {
   const [h, m] = t.split(":").map(Number);
-  return h * 60 + m;
+  return (h ?? 0) * 60 + (m ?? 0);
 };
 
 export const fromMin = (n: number) =>
