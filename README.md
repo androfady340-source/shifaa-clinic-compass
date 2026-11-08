@@ -1,24 +1,56 @@
+
 # Shifaa Clinic Compass
 
-انا عايز موقع الكتروني لعياده فيها كل التخصصات بالعربي مايبقاش فيها كلام كتير تبقي مختصره يعني مع نظام حجز دقيق وفيه داشبورد الدكاتره وفيها داشبورد منفصله خالص للمالك أو الدكتور الكبير عشان يوافق علي الدكاتره ويبقوا دكاتره اصلا ف الموقع مع اضافه كل البيانات المطلوبه وكل دكتور يحدد كل حاجه هو عايزها ولما ياكد حجز المريض المعاد يتشطب اوتوماتيك ولو في حاجه محتاجها قولي عليها قبل ما تبدأ انا هبقي عايز السورس كود وقولي الطريقه عشان ارفع علي كلاودفلير عشان اخد لينك وقلي الطريقه وتأكد منها الاول وظبط الالوان عشان تبقي مريحه للعين برده وخلي يبقي بلاك مود و وايت مود
+A modern, full-featured clinic management and appointment booking platform built to simplify healthcare operations.
 
-This project was built with [Lovable](https://lovable.dev).
+## Overview
 
-## Build with Lovable
+Shifaa Clinic Compass provides a centralized platform for patients, doctors, and clinic administrators.
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/ced0850b-a2f2-44c8-83a3-8e494ff18f6a).
+## Key Features
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+- Online appointment booking.
+- Multiple medical specialties.
+- Doctor profiles and availability management.
+- Doctor dashboard.
+- Separate owner and administrator dashboard.
+- Doctor registration and approval workflow.
+- Automated appointment slot management.
+- Responsive user interface.
+- Light and dark mode.
+- Arabic RTL support.
 
-## Development
+## Tech Stack
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+- TypeScript
+- TanStack Start
+- React
+- Supabase
+- Drizzle ORM
+- Tailwind CSS
 
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+## Project Structure
+
+- `src/` — Application source code.
+- `supabase/` — Supabase configuration and database resources.
+- `drizzle/` — Database schema and migrations.
+- `public/` — Static assets.
+
+## Getting Started
+
+```bash
+git clone YOUR_REPOSITORY_URL
+cd YOUR_PROJECT_FOLDER
+npm install
 npm run dev
 ```
+
+Configure the required environment variables before running the application.
+
+## Deployment
+
+The project can be deployed using compatible hosting platforms after configuring the environment variables and build settings.
+
+## Author
+
+Andro Fady
