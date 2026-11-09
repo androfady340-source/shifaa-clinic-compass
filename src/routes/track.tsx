@@ -34,7 +34,7 @@ function TrackPage() {
 
   const check = async () => {
     setErrorMessage("");
-    if (!z.string().uuid().safeParse(id.trim()).success || !/^\\+?[0-9]{8,15}$/.test(phone.trim())) {
+    if (!z.string().uuid().safeParse(id.trim()).success || !/^\+?[0-9]{8,15}$/.test(phone.trim())) {
       setRes("none");
       return;
     }
