@@ -33,14 +33,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
+    const initialVersion = requestVersion;
     supabase.auth.getUser()
       .then(({ data, error }) => {
         if (error) throw error;
-        return load(data.user);
+        if (active && requestVersion === initialVersion) return load(data.user);
       })
       .catch((error) => {
         console.error("Unable to restore clinic session", error);
-        if (active) setState({ user: null, isAdmin: false, ready: true });
+        if (active && requestVersion === initialVersion) {
+          setState({ user: null, isAdmin: false, ready: true });
+        }
       });
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
