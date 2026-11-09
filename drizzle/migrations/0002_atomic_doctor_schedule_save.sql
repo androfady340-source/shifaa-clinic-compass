@@ -89,7 +89,7 @@ BEGIN
         )
         WHERE x.weekday = EXTRACT(DOW FROM b.booking_date)::smallint
           AND b.start_time >= x.start_time
-          AND b.start_time + make_interval(mins => _slot_minutes) <= x.end_time
+          AND EXTRACT(EPOCH FROM (x.end_time - b.start_time)) >= _slot_minutes * 60
           AND MOD(
             (EXTRACT(EPOCH FROM (b.start_time - x.start_time)) / 60)::integer,
             _slot_minutes
@@ -110,8 +110,7 @@ BEGIN
       AND a.booking_date >= local_today
       AND a.status IN ('pending', 'confirmed', 'completed')
       AND b.status IN ('pending', 'confirmed', 'completed')
-      AND a.start_time < b.start_time + make_interval(mins => _slot_minutes)
-      AND b.start_time < a.start_time + make_interval(mins => _slot_minutes)
+      AND ABS(EXTRACT(EPOCH FROM (a.start_time - b.start_time))) < _slot_minutes * 60
   ) THEN
     RAISE EXCEPTION 'SLOT_DURATION_CONFLICT_WITH_BOOKINGS' USING ERRCODE = '23514';
   END IF;
