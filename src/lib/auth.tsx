@@ -13,15 +13,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
 
   useEffect(() => {
+    let active = true;
+    let requestVersion = 0;
+
     const load = async (user: User | null) => {
+      const version = ++requestVersion;
       let isAdmin = false;
-      if (user) {
-        const { data } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
-        isAdmin = !!data;
+      try {
+        if (user) {
+          const { data, error } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
+          if (error) throw error;
+          isAdmin = !!data;
+        }
+      } catch (error) {
+        console.error("Unable to verify clinic administrator role", error);
       }
-      setState({ user, isAdmin, ready: true });
+      if (active && version === requestVersion) {
+        setState({ user, isAdmin, ready: true });
+      }
     };
-    supabase.auth.getUser().then(({ data }) => load(data.user));
+
+    const initialVersion = requestVersion;
+    supabase.auth.getUser()
+      .then(({ data, error }) => {
+        if (error) throw error;
+        if (active && requestVersion === initialVersion) return load(data.user);
+      })
+      .catch((error) => {
+        console.error("Unable to restore clinic session", error);
+        if (active && requestVersion === initialVersion) {
+          setState({ user: null, isAdmin: false, ready: true });
+        }
+      });
+
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       void load(session?.user ?? null);
@@ -29,7 +53,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event !== "SIGNED_OUT") qc.invalidateQueries();
       else qc.clear();
     });
-    return () => sub.subscription.unsubscribe();
+
+    return () => {
+      active = false;
+      requestVersion++;
+      sub.subscription.unsubscribe();
+    };
   }, [router, qc]);
 
   return <AuthCtx.Provider value={state}>{children}</AuthCtx.Provider>;

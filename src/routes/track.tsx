@@ -30,13 +30,26 @@ function TrackPage() {
   const [phone, setPhone] = useState("");
   const [res, setRes] = useState<Result | null | "none">(null);
   const [busy, setBusy] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const check = async () => {
-    if (!z.string().uuid().safeParse(id.trim()).success) return setRes("none");
+    setErrorMessage("");
+    if (!z.string().uuid().safeParse(id.trim()).success || !/^\+?[0-9]{8,15}$/.test(phone.trim())) {
+      setRes("none");
+      return;
+    }
     setBusy(true);
-    const { data } = await supabase.rpc("get_booking_status", { _id: id.trim(), _phone: phone });
-    setBusy(false);
-    setRes(data && data.length ? (data[0] as Result) : "none");
+    try {
+      const { data, error } = await supabase.rpc("get_booking_status", { _id: id.trim(), _phone: phone.trim() });
+      if (error) throw error;
+      setRes(data && data.length ? (data[0] as Result) : "none");
+    } catch (error) {
+      console.error("Booking status lookup failed", error);
+      setRes(null);
+      setErrorMessage("حصلت مشكلة في الاستعلام. حاول تاني.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -55,6 +68,7 @@ function TrackPage() {
           اعرف الحالة
         </Button>
       </div>
+      {errorMessage && <p role="alert" className="mt-6 text-center text-destructive">{errorMessage}</p>}
       {res === "none" && <p className="mt-6 text-center text-muted-foreground">مفيش حجز بالبيانات دي</p>}
       {res && res !== "none" && (
         <div className="mt-6 space-y-2 rounded-2xl border bg-card p-5 text-center">
