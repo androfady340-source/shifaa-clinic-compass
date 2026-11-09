@@ -249,6 +249,13 @@ export type Database = {
         Args: { _date: string; _doctor: string }
         Returns: string[]
       }
+      save_doctor_schedule: {
+        Args: {
+          _availability: Json
+          _slot_minutes: number
+        }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
