@@ -27,7 +27,9 @@ BEGIN
     RAISE EXCEPTION 'INVALID_AVAILABILITY' USING ERRCODE = '22023';
   END IF;
 
-  IF NOT EXISTS (SELECT 1 FROM public.doctors WHERE id = current_user_id) THEN
+  -- Serialize schedule edits with booking creation and other schedule saves.
+  PERFORM 1 FROM public.doctors WHERE id = current_user_id FOR UPDATE;
+  IF NOT FOUND THEN
     RAISE EXCEPTION 'DOCTOR_NOT_FOUND' USING ERRCODE = '42501';
   END IF;
 
@@ -135,6 +137,97 @@ $$;
 REVOKE ALL ON FUNCTION public.save_doctor_schedule(integer, jsonb) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.save_doctor_schedule(integer, jsonb) FROM anon;
 GRANT EXECUTE ON FUNCTION public.save_doctor_schedule(integer, jsonb) TO authenticated;
+
+-- Lock the doctor row during booking creation so a concurrent schedule
+-- change cannot race the availability check.
+CREATE OR REPLACE FUNCTION public.create_booking(
+  _doctor uuid, _date date, _time time, _name text, _phone text,
+  _payment public.payment_method, _instapay_ref text, _notes text
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $
+DECLARE
+  d public.doctors;
+  local_now timestamp := (now() AT TIME ZONE 'Africa/Cairo');
+  ok boolean;
+  new_id uuid;
+BEGIN
+  SELECT * INTO d
+  FROM public.doctors
+  WHERE id = _doctor AND status = 'approved'
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'DOCTOR_UNAVAILABLE';
+  END IF;
+
+  _name := btrim(coalesce(_name, ''));
+  _phone := regexp_replace(coalesce(_phone, ''), '\s', '', 'g');
+  _instapay_ref := left(btrim(coalesce(_instapay_ref, '')), 100);
+  _notes := left(btrim(coalesce(_notes, '')), 500);
+
+  IF length(_name) < 2 OR length(_name) > 100 THEN RAISE EXCEPTION 'INVALID_NAME'; END IF;
+  IF _phone !~ '^\+?[0-9]{8,15}
+ALTER TABLE public.bookings
+  ADD CONSTRAINT bookings_start_time_minute_precision
+  CHECK (EXTRACT(SECOND FROM start_time) = 0);
+
+ALTER TABLE public.doctor_availability
+  ADD CONSTRAINT doctor_availability_minute_precision
+  CHECK (
+    EXTRACT(SECOND FROM start_time) = 0
+    AND EXTRACT(SECOND FROM end_time) = 0
+  );
+ THEN RAISE EXCEPTION 'INVALID_PHONE'; END IF;
+  IF EXTRACT(SECOND FROM _time) <> 0 THEN RAISE EXCEPTION 'INVALID_SLOT'; END IF;
+  IF _date < local_now::date OR _date > local_now::date + 60 THEN RAISE EXCEPTION 'INVALID_DATE'; END IF;
+  IF (_date + _time) <= local_now THEN RAISE EXCEPTION 'SLOT_PASSED'; END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.doctor_days_off
+    WHERE doctor_id = _doctor AND off_date = _date
+  ) THEN
+    RAISE EXCEPTION 'DAY_OFF';
+  END IF;
+
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.doctor_availability a
+    WHERE a.doctor_id = _doctor
+      AND a.weekday = EXTRACT(DOW FROM _date)::int
+      AND _time >= a.start_time
+      AND (EXTRACT(EPOCH FROM (a.end_time - _time)) / 60) >= d.slot_minutes
+      AND (EXTRACT(EPOCH FROM (_time - a.start_time)) / 60)::int % d.slot_minutes = 0
+  ) INTO ok;
+
+  IF NOT ok THEN RAISE EXCEPTION 'INVALID_SLOT'; END IF;
+
+  IF _payment = 'instapay' THEN
+    IF NOT d.accepts_instapay THEN RAISE EXCEPTION 'PAYMENT_DISABLED'; END IF;
+    IF length(_instapay_ref) < 3 THEN RAISE EXCEPTION 'INSTAPAY_REF_REQUIRED'; END IF;
+  ELSE
+    IF NOT d.accepts_clinic THEN RAISE EXCEPTION 'PAYMENT_DISABLED'; END IF;
+  END IF;
+
+  BEGIN
+    INSERT INTO public.bookings (
+      doctor_id, booking_date, start_time, patient_name, patient_phone,
+      notes, payment_method, instapay_ref
+    )
+    VALUES (
+      _doctor, _date, _time, _name, _phone, _notes, _payment, _instapay_ref
+    )
+    RETURNING id INTO new_id;
+  EXCEPTION WHEN unique_violation THEN
+    RAISE EXCEPTION 'SLOT_TAKEN';
+  END;
+
+  RETURN new_id;
+END;
+$;
 
 -- Prevent direct or RPC-created bookings with second-level times from bypassing
 -- the unique (doctor, date, start_time) slot key.
