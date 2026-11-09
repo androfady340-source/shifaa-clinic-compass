@@ -107,12 +107,18 @@ function Schedule({ doctorId, slotMinutes }: { doctorId: string; slotMinutes: nu
     if (rows.some((r) => !r.start_time || !r.end_time || r.end_time <= r.start_time))
       return toast.error("راجع المواعيد: النهاية لازم تكون بعد البداية");
     if (slot < 5 || slot > 180) return toast.error("مدة الكشف من 5 لـ 180 دقيقة");
-    const d1 = await supabase.from("doctors").update({ slot_minutes: slot }).eq("id", doctorId);
-    const d2 = await supabase.from("doctor_availability").delete().eq("doctor_id", doctorId);
-    const d3 = rows.length ? await supabase.from("doctor_availability").insert(rows.map((r) => ({ ...r, doctor_id: doctorId }))) : { error: null };
-    if (d1.error || d2.error || d3.error) return toast.error("حصلت مشكلة في الحفظ");
+    const { error } = await supabase.rpc("save_doctor_schedule", {
+      _slot_minutes: slot,
+      _availability: rows,
+    });
+    if (error) {
+      toast.error(error.message.includes("SCHEDULE_CONFLICT") || error.message.includes("SLOT_DURATION_CONFLICT")
+        ? "التعديل ده هيأثر على حجوزات قادمة. راجع الحجوزات الأول."
+        : "حصلت مشكلة في حفظ المواعيد");
+      return;
+    }
     toast.success("اتحفظت المواعيد");
-    qc.invalidateQueries();
+    await qc.invalidateQueries();
   };
 
   const addOff = async () => {
@@ -165,7 +171,11 @@ function Schedule({ doctorId, slotMinutes }: { doctorId: string; slotMinutes: nu
           <div key={d.id} className="flex items-center justify-between rounded-xl bg-muted px-3 py-2 text-sm">
             {formatDate(d.off_date)}
             <Button variant="ghost" size="icon" className="size-7"
-              onClick={async () => { await supabase.from("doctor_days_off").delete().eq("id", d.id); daysOff.refetch(); }}>
+              onClick={async () => {
+                const { error } = await supabase.from("doctor_days_off").delete().eq("id", d.id);
+                if (error) { toast.error("حصلت مشكلة في حذف الإجازة"); return; }
+                daysOff.refetch();
+              }}>
               <Trash2 />
             </Button>
           </div>
