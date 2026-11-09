@@ -52,8 +52,15 @@ function Doctors() {
   const qc = useQueryClient();
   const { data = [] } = useQuery({
     queryKey: ["admin-doctors"],
-    queryFn: async () =>
-      (await supabase.from("doctors").select("*, specialties(name)").order("status").order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("doctors")
+        .select("*, specialties(name)")
+        .order("status")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
   });
   const set = async (id: string, status: "approved" | "rejected" | "pending") => {
     const { error } = await supabase.from("doctors").update({ status }).eq("id", id);
@@ -97,7 +104,8 @@ function Specialties() {
   };
   const del = async (id: string) => {
     if (!confirm("مسح التخصص؟")) return;
-    await supabase.from("specialties").delete().eq("id", id);
+    const { error } = await supabase.from("specialties").delete().eq("id", id);
+    if (error) return toast.error("حصلت مشكلة في مسح التخصص");
     qc.invalidateQueries({ queryKey: ["specialties"] });
   };
   return (
