@@ -56,7 +56,7 @@ Copy `.env.example` to `.env` and replace the placeholders with values from your
 
 Apply the SQL migration in `drizzle/migrations/0000_clinic_schema.sql` to your Supabase project using the Supabase SQL Editor or your established migration workflow. Review the migration and configure Supabase Auth and project settings for your deployment before accepting real bookings.
 
-The migration defines the application roles, doctors, specialties, availability, days off, bookings, row-level security policies, and booking-related database functions.
+The migration defines the application roles, doctors, specialties, availability, days off, bookings, row-level security policies, and booking-related database functions. Apply subsequent SQL migrations in numerical order as well. The admin bootstrap is restricted to the designated owner account; public doctor signups remain pending until approved.
 
 ### 4. Run locally
 
