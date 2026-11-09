@@ -49,9 +49,8 @@ Copy `.env.example` to `.env` and replace the placeholders with values from your
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key used by the browser build |
 | `SUPABASE_URL` | Supabase URL used by server-side code |
 | `SUPABASE_PUBLISHABLE_KEY` | Publishable key used by authenticated server-side requests |
-| `SUPABASE_SERVICE_ROLE_KEY` | Secret service-role key for trusted server-only operations |
 
-**Security:** Never expose `SUPABASE_SERVICE_ROLE_KEY` through a `VITE_` variable, commit real credentials, or use the service-role client in browser code. Keep your local `.env` file private.
+**Security:** Never commit real credentials or expose secret keys through `VITE_` variables. Keep your local `.env` file private. This project currently uses the Supabase publishable key for its application client; do not add a service-role key to browser configuration.
 
 ### 3. Set up the database
 
